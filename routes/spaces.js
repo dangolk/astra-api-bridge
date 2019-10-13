@@ -165,8 +165,6 @@ router.get('/rooms/availability', (req, res, next) => {
   // const baseUrl = 'http://qeapp/SG86044Merced';
   // const username = 'sysadmin'; // I think this is already being config'd in the bridge API
   // const password = 'apple';
-  const originatingUserName = 'guest'; // we should look into creating an outlook user and config'ing that
-
 
     const from = new Date('2019-08-17 01:00:00.000');
     const to = new Date('2019-08-17 02:00:00.000');
@@ -181,11 +179,10 @@ router.get('/rooms/availability', (req, res, next) => {
   // const endMinute = end.getMinutes();
   console.log(`${startDate} , ${endDate} , ${startMinute} , ${endMinute}`);
   const description = `This event was created by ${userName} (${userEmail}) and automatically created here by the Ad Astra Outlook Add-in.`;
-  const currentYear = new Date().getFullYear().toString(); // todo RT -- why do we need this
+  const currentYear = new Date().getFullYear().toString(); // this is needed to craft the request number
 
-  // Not really doing anything yet
   const customerName = 'Outlook';
-  const customerContactName = 'Outlook';
+  const customerContactName = 'Outlook'; // This is the username, not full name
 
   const eventId = uuidv4();
   const eventMeetingId = uuidv4();
@@ -276,17 +273,23 @@ router.get('/rooms/availability', (req, res, next) => {
   const requestNumber = `${currentYear}-${(currentMaxRequestNumber + 1).toString().padStart(5, '0')}`;
   console.log(`requestNumber = ${requestNumber}`);
 
-  var originatingUserId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/User?fields=Id,UserName&filter=Username%3D%3D%22${originatingUserName}%22%26%26IsActive%3D%3D1`, res).then((response) => {
-      originatingUserId = response.data.data[0][0];
-      console.log(`originatingUserId = ${originatingUserId}`);
-  }).catch((error) => { console.error(error); });
-
-
   let reservationNumber = '';
   await cq.get(`${config.defaultApi.url}/~api/events/GetReservationNumber`, res).then((response) => {
       reservationNumber = response.data;
       console.log(`reservationNumber = ${reservationNumber}`);
+  }).catch((error) => { console.error(error); });
+
+
+  let customerId = '';
+  await cq.get(`${config.defaultApi.url}/~api/query/customer?filter=Name%3D%3D%22${customerName}%22&fields=Id,Name`, res).then((response) => {
+      customerId = response.data.data[0][0];
+      console.log(`customerId = ${customerId}`);
+  }).catch((error) => { console.error(error); });
+
+  let customerContactId = '';
+  await cq.get(`${config.defaultApi.url}/~api/query/user?filter=UserName%3D%3D%22${customerContactName}%22%26%26IsActive%3D%3D1&fields=Id,UserName,IsActive`, res).then((response) => {
+      customerContactId = response.data.data[0][0];
+      console.log(`customerContactId = ${customerContactId}`);
   }).catch((error) => { console.error(error); });
 
 
@@ -307,10 +310,11 @@ router.get('/rooms/availability', (req, res, next) => {
                     "Id": eventId,
                     "AccountingKey": null,
                     "AllowAttendeeSignUp": false,
-                    "CustomerContactName": "Aasness, Albert", customerName,
-                    "CustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf",
-                    "CustomerId": "b0661fc2-a8ad-11e4-8aab-277e3893bef1",
-                    "CustomerName": "Chi Omega (Chi O)", //customerName,
+                    "CustomerContactName": customerName,
+                    "CustomerContactId": customerContactId,
+                    "PrimaryCustomerContactId": customerContactId,
+                    "CustomerId": customerId,
+                    "CustomerName": customerName,
                     "Description": null, //description,
                     "DoNotifyPrimaryContact": true,
                     "EditCounter": 0,
@@ -329,8 +333,8 @@ router.get('/rooms/availability', (req, res, next) => {
                     "Name": "Ryan Outlook Test", //"",
                     "Notify": null,
                     "NextMeetingNumber": 0,
-                    "OwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3", //originatingUserId,
-                    "PrimaryCustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf", //null, // Look this up?
+                    "OwnerId": customerContactId,
+                    "PrimaryCustomerContactId": customerContactId,
                     "RecordableAttendeeType": 0, //null,
                     "RequiresAttention": false,
                     "RequiresAttentionReason": null,
@@ -381,10 +385,10 @@ router.get('/rooms/availability', (req, res, next) => {
                     "BuildingRoom": "Adams Hall 102", //`${buildingName} ${roomName}`,
                     "ConflictDesc": "",
                     "ConflictsWithHoliday": false,
-                    "CustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf", //null, // Look this up?
-                    "CustomerContactName": "", //customerName,
-                    "CustomerId": "", //null,
-                    "CustomerName": "", //customerName,
+                    "CustomerContactId": customerContactId,
+                    "CustomerContactName": customerContactName,
+                    "CustomerId": customerId,
+                    "CustomerName": customerName,
                     "DaysMask": 0, //null,
                     "Description": null,
                     "Duration": 0, //(endMinute - startMinute),
@@ -406,7 +410,7 @@ router.get('/rooms/availability', (req, res, next) => {
                     "MaxAttendance": 0, //null,
                     "MeetingNumber": 0,
                     "Name": "Ryan Outlook Test", //eventName,
-                    "OwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3", //originatingUserId,
+                    "OwnerId": customerContactId,
                     "RecurrencePatternId": null,
                     "RequiresAttention": false,
                     "RequiresAttentionReason": null,
@@ -416,7 +420,7 @@ router.get('/rooms/availability', (req, res, next) => {
                     "StartMinute": 1080, //startMinute,
                     "StatusText": "",
                     "WorkflowIntent": "S",
-                    "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3", originatingUserId,
+                    "WorkflowIntentOwnerId": customerContactId,
                     "WorkflowState": null
                 }
             ]
@@ -455,7 +459,7 @@ router.get('/rooms/availability', (req, res, next) => {
                     "StartMinute": 0,         
                     "UsageTypeCode": 0, //2, // Need to look into whether this works with a request
                     "WorkflowIntent": "S",
-                    "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3", //originatingUserId,
+                    "WorkflowIntentOwnerId": customerContactId,
                     "WorkflowState": null
                 }
             ]
