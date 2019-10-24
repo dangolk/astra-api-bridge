@@ -136,18 +136,9 @@ router.get('/campuslist', (req, res, next) => {
  *       - facilities
  *     description: Returns a list of building resources.  Valid filter parameters include having no filters, having a single filter value in both the filterfields and the filtervalues boxes (=), having the same number of values in each box (=), and having a single value in the filterfields box and many values in the filtervalues box ("in").
  *     parameters:
- *       - name: filterfields
- *         description: Create comma delimited string for multiple values
+ *       - name: campus_id
+ *         description: Campus id of the building
  *         in: query
- *         type: string 
- *       - name: filtervalues
- *         description: Create comma delimited string for multiple values
- *         in: query
- *         type: string 
- *       - name: filtertype
- *         description: Select an filtertype
- *         in: query
- *         enum: ["equals_/_in","not_equals/not_in"]
  *         type: string 
  *     produces:
  *       - application/json
@@ -162,16 +153,17 @@ router.get('/buildinglist', (req, res, next) => {
   qb.entity = EntityEnum.BUILDING;
   qb.addFields(['Id', 'Name', 'BuildingCode', 'Campus.Name','IsActive']);
   qb.sort = 'Campus.Name%2CName';
-  qb.queryType = QueryTypeEnum.LIST;  
-  qb.addFilterFields(req.query.filterfields);
-  qb.addFilterValues(req.query.filtervalues);
-  if(req.query.filtertype == 'not_equals/not_in'){
-    qb.equalityFilter = false;
-  };
+  qb.queryType = QueryTypeEnum.ADVANCED;  
+  let campusId = req.query.campus_id;
+
+  if (campusId) {
+    var campusFilter = `CampusId in ("${campusId}")`;
+    qb.advancedFilter = encodeURIComponent(campusFilter);
+  }
+
   const logonUrl = config.defaultApi.url + config.defaultApi.logonEndpoint;
   const buildingsUrl = config.defaultApi.url + config.defaultApi.buildingsEndpoint
   +qb.toQueryString();
-
 
   const credentialData = {
     username: config.defaultApi.username,
@@ -232,18 +224,9 @@ router.get('/buildinglist', (req, res, next) => {
  *       - facilities
  *     description: Returns a list of building resources.  Valid filter parameters include having no filters, having a single filter value in both the filterfields and the filtervalues boxes (=), having the same number of values in each box (=), and having a single value in the filterfields box and many values in the filtervalues box ("in").
  *     parameters:
- *       - name: filterfields
- *         description: Create comma delimited string for multiple values
+ *       - name: building_id
+ *         description: rooms in this building
  *         in: query
- *         type: string 
- *       - name: filtervalues
- *         description: Create comma delimited string for multiple values
- *         in: query
- *         type: string 
- *       - name: filtertype
- *         description: Select an filtertype
- *         in: query
- *         enum: ["equals_/_in","not_equals/not_in"]
  *         type: string 
  *     produces:
  *       - application/json
@@ -260,12 +243,14 @@ router.get('/roomlist', (req, res, next) => {
   qb.addFields(['Id', 'Name', 'roomNumber', 'RoomType.Name']);
   qb.addFields(['Building.Name', 'Building.BuildingCode', 'MaxOccupancy', 'IsActive']);
   qb.sort = '%2BBuilding.Name,Name';
-  qb.queryType = QueryTypeEnum.LIST;  
-  qb.addFilterFields(req.query.filterfields);
-  qb.addFilterValues(req.query.filtervalues);
-  if(req.query.filtertype == 'not_equals/not_in'){
-    qb.equalityFilter = false;
-  };
+  qb.queryType = QueryTypeEnum.ADVANCED;  
+  let buildingId = req.query.building_id;
+
+  if (buildingId) {
+    var buildingFilter = `BuildingId in ("${buildingId}")`;
+    qb.advancedFilter = encodeURIComponent(buildingFilter);
+  }
+  
   const logonUrl = config.defaultApi.url + config.defaultApi.logonEndpoint;
   const roomsUrl = config.defaultApi.url + config.defaultApi.roomsEndpoint
     +qb.toQueryString();

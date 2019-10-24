@@ -5,7 +5,7 @@ var swaggerUI = require('swagger-ui-express');
 
 var swaggerDefinition = {
   info: {
-    title: 'Astra API Facade',
+    title: 'Astra API Bridge',
     version: '0.0.2',
     description: 'This is a RESTful API that layers on top of the Astra Schedule API',
   },

@@ -4,8 +4,8 @@
 
 ***
 [![Build Status](https://travis-ci.org/adastradev/astra-api-bridge.svg?branch=master)](https://travis-ci.org/adastradev/astra-api-bridge)
-[![Dependency Status](https://david-dm.org/adastradev/astra-api-facade.svg)](https://david-dm.org/adastradev/astra-api-facade)
-[![Dev Dependency Status](https://david-dm.org/adastradev/astra-api-facade/dev-status.svg)](https://david-dm.org/adastradev/astra-api-facade?type=dev)
+[![Dependency Status](https://david-dm.org/adastradev/astra-api-bridge.svg)](https://david-dm.org/adastradev/astra-api-bridge)
+[![Dev Dependency Status](https://david-dm.org/adastradev/astra-api-bridge/dev-status.svg)](https://david-dm.org/adastradev/astra-api-bridge?type=dev)
 
 This is a middleware solution that leverages the [facade pattern](https://en.wikipedia.org/wiki/Facade_pattern) to provide a simplified RESTful API on top of the existing Astra Schedule API
 
@@ -17,10 +17,10 @@ Configure your Astra Schedule envrionment with a username and password that can 
 
 #### 2. Clone the project
 
-`git clone https://github.com/adastradev/astra-api-facade.git`
+`git clone https://github.com/adastradev/astra-api-bridge.git`
 
 #### 3. Install all dependencies
-Change into the project directory (e.g. `cd astra-api-facade`) and run `npm install`
+Change into the project directory (e.g. `cd astra-api-bridge`) and run `npm install`
 
 #### 4. Configure authentication
 
