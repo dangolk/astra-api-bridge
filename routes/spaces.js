@@ -110,4 +110,176 @@ router.get('/rooms/availability', (req, res, next) => {
     }
 });
 
+/**
+* @swagger
+* /spaces/rooms:
+*   get:
+*     tags:
+*       - rooms
+*     description: Returns all rooms and whether they available for the entire time specified
+*     parameters:
+*       - name: building_id
+*         description: rooms within this building
+*         in: query
+*         type: string
+*         format: string
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: An array of rooms with their availability specified
+*         schema:
+*           $ref: '#/definitions/Room'
+*/
+router.get('/rooms', (req, res, next) => {
+ 
+   var qb = new ReadQueryBuilder();
+   qb.addFields(['Id', 'Name', 'roomNumber', 'RoomType.Name']);
+   qb.addFields(['Building.Name', 'Building.BuildingCode', 'MaxOccupancy', 'IsActive']);
+   qb.sort = '%2BBuilding.Name,Name';
+   qb.queryType = QueryTypeEnum.ADVANCED;  
+   qb.limit = 500;
+   
+   let buildingId = req.query.building_id;
+
+   if (buildingId) {
+     var buildingFilter = `BuildingId in ("${buildingId}")`;
+     qb.advancedFilter = encodeURIComponent(buildingFilter);
+   }
+
+   const roomsUrl = config.defaultApi.url + config.defaultApi.roomsEndpoint + qb.toQueryString()
+
+     var cq = new CredentialedQuery();
+     cq.get(roomsUrl, res).then(function (response) {          
+      let roomData = response.data.data;
+      let allrooms = []; 
+      for (let i = 0; i < roomData.length; i++) {
+        allrooms[i] = {};
+        allrooms[i].roomId = roomData[i][0];
+        allrooms[i].roomName = roomData[i][1];
+        allrooms[i].roomNumber = roomData[i][2];
+        allrooms[i].roomType = roomData[i][3];
+        allrooms[i].buildingName = roomData[i][4];
+        allrooms[i].buildingCode = roomData[i][5];
+        allrooms[i].maxOccupancy = roomData[i][6];
+        allrooms[i].isActive = roomData[i][7];
+        allrooms[i].index = i;
+      }
+
+      res.send(allrooms);
+
+     }).catch(function (error) {
+       console.log(error);
+       res.send(error);
+     });
+   
+});
+
+/**
+* @swagger
+* /spaces/buildings:
+*   get:
+*     tags:
+*       - rooms
+*     description: Returns all rooms and whether they available for the entire time specified
+*     parameters:
+*       - name: campus_id
+*         description: buildings within this campus
+*         in: query
+*         type: string
+*         format: string
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: An array of Building with their availability specified
+*         schema:
+*           $ref: '#/definitions/Building'
+*/
+router.get('/buildings', (req, res, next) => {
+ 
+  var qb = new ReadQueryBuilder();
+  qb.addFields(['Id', 'Name', 'BuildingCode', 'Campus.Name','IsActive']);
+  qb.sort = 'Campus.Name%2CName';
+  qb.limit = 500;
+  qb.queryType = QueryTypeEnum.ADVANCED;  
+
+  let campusId = req.query.campus_id;
+  if (campusId) {
+    var campusFilter = `CampusId in ("${campusId}")`;
+    qb.advancedFilter = encodeURIComponent(campusFilter);
+  }
+  
+  const buildingUrl = config.defaultApi.url + config.defaultApi.buildingsEndpoint + qb.toQueryString()
+
+    var cq = new CredentialedQuery();
+    cq.get(buildingUrl, res).then(function (response) {          
+      let buildingData = response.data.data;
+      let allBuildings = []; 
+      for (let i = 0; i < buildingData.length; i++) {
+        allBuildings[i] = {};
+        allBuildings[i].buildingId = buildingData[i][0];
+        allBuildings[i].buildingName = buildingData[i][1];
+        allBuildings[i].buildingCode = buildingData[i][2];
+        allBuildings[i].campusName = buildingData[i][3];
+        allBuildings[i].isActive = buildingData[i][4];
+        allBuildings[i].index = i;
+      }
+      res.setHeader('Content-Type', 'application/json');
+      res.send(allBuildings);
+
+    }).catch(function (error) {
+      console.log(error);
+      res.send(error);
+    });
+  
+});
+
+/**
+* @swagger
+* /spaces/campuses:
+*   get:
+*     tags:
+*       - rooms
+*     description: Returns all rooms and whether they available for the entire time specified
+*     produces:
+*       - application/json
+*     responses:
+*       200:
+*         description: An array of Building with their availability specified
+*         schema:
+*           $ref: '#/definitions/Campus'
+*/
+router.get('/campuses', (req, res, next) => {
+ 
+  var qb = new ReadQueryBuilder();
+  qb.addFields(['Id', 'Name', 'IsActive']);
+  qb.sort = 'Name';
+  qb.limit = 500;
+  qb.queryType = QueryTypeEnum.ADVANCED;
+  
+  const buildingUrl = config.defaultApi.url + config.defaultApi.campusEndpoint + qb.toQueryString()
+
+    var cq = new CredentialedQuery();
+    cq.get(buildingUrl, res).then(function (response) {        
+      let campusData = response.data.data;
+      let allCampuses = []; 
+      for (let i = 0; i < campusData.length; i++) {
+        allCampuses[i] = {};
+        allCampuses[i].campusId = campusData[i][0];
+        allCampuses[i].campusName = campusData[i][1];
+        allCampuses[i].isActive = campusData[i][4];
+        allCampuses[i].index = i;
+      }
+      res.setHeader('Content-Type', 'application/json');
+      res.send(allCampuses);
+    }).catch(function (error) {
+      console.log(error);
+      res.send(error);
+    });
+  
+});
+
+
+
 module.exports = router;
