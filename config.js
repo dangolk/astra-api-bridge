@@ -15,6 +15,7 @@ config.defaultApi = {
   "campusEndpoint": '~api/query/campus?',
   "buildingsEndpoint": '~api/query/building?',
   "roomsEndpoint": '~api/query/room?',
+  "entityFeatureEndpoint": '~api/entity/Room/RoomFeatureQuantities/',
   "roomSearchEndpoint": '~api/resources/roomlist?',
   "roleEndpoint": '~api/query/role?',
   "permEndpoint": '~api/query/permission?'

@@ -131,14 +131,36 @@ router.get('/rooms/availability', (req, res, next) => {
 *         schema:
 *           $ref: '#/definitions/Room'
 */
-router.get('/rooms', (req, res, next) => {
+router.get('/rooms', async (req, res, next) => {
  
    var qb = new ReadQueryBuilder();
-   qb.addFields(['Id', 'Name', 'roomNumber', 'RoomType.Name']);
-   qb.addFields(['Building.Name', 'Building.BuildingCode', 'MaxOccupancy', 'IsActive']);
+   qb.addFields([
+     'Id',
+     'Name',
+     'roomNumber',
+     'RoomType.Name',
+     'Building.Name',
+     'Building.BuildingCode',
+     'MaxOccupancy',
+     'IsActive',
+     'Description',
+     'ReportingRegion',
+     'RequiresAttention',
+     'RequiresAttentionReason',
+    ]);
    qb.sort = '%2BBuilding.Name,Name';
    qb.queryType = QueryTypeEnum.ADVANCED;  
    qb.limit = 500;
+
+   var fq = new ReadQueryBuilder();
+   fq.addFields([
+     'Id',
+     'FeatureName',
+     'Qty',
+    ]);
+    fq.sort = '%2BFeatureName';
+    fq.queryType = QueryTypeEnum.ADVANCED;  
+    fq.limit = 500;
    
    let buildingId = req.query.building_id;
 
@@ -150,7 +172,7 @@ router.get('/rooms', (req, res, next) => {
    const roomsUrl = config.defaultApi.url + config.defaultApi.roomsEndpoint + qb.toQueryString()
 
      var cq = new CredentialedQuery();
-     cq.get(roomsUrl, res).then(function (response) {          
+     cq.get(roomsUrl, res).then(async (response) => {          
       let roomData = response.data.data;
       let allrooms = []; 
       for (let i = 0; i < roomData.length; i++) {
@@ -163,10 +185,25 @@ router.get('/rooms', (req, res, next) => {
         allrooms[i].buildingCode = roomData[i][5];
         allrooms[i].maxOccupancy = roomData[i][6];
         allrooms[i].isActive = roomData[i][7];
+        allrooms[i].description = roomData[i][8];
+        allrooms[i].reportingRegion = roomData[i][9];
         allrooms[i].index = i;
       }
 
-      res.send(allrooms);
+      featureRooms = await Promise.all(allrooms.map( async room => {
+          const featureUrl = `${config.defaultApi.url}${config.defaultApi.entityFeatureEndpoint}${room.roomId}`;
+          const response = await cq.get(featureUrl, res);
+          const featureMap = response.data.data.map(feature => ({
+            featureName: feature.FeatureName,
+            qty: feature.Qty,
+          }));
+          return {
+            ...room,
+            features: featureMap,
+          }
+      }));
+      res.send(featureRooms);
+
 
      }).catch(function (error) {
        console.log(error);
@@ -199,7 +236,16 @@ router.get('/rooms', (req, res, next) => {
 router.get('/buildings', (req, res, next) => {
  
   var qb = new ReadQueryBuilder();
-  qb.addFields(['Id', 'Name', 'BuildingCode', 'Campus.Name','IsActive']);
+  qb.addFields([
+    'Id',
+    'Name',
+    'BuildingCode',
+    'Description',
+    'Campus.Name',
+    'IsActive',
+    'DoNotOptimize',
+    'NoSchedule',
+    'ArrangedSection']);
   qb.sort = 'Campus.Name%2CName';
   qb.limit = 500;
   qb.queryType = QueryTypeEnum.ADVANCED;  
@@ -221,8 +267,12 @@ router.get('/buildings', (req, res, next) => {
         allBuildings[i].buildingId = buildingData[i][0];
         allBuildings[i].buildingName = buildingData[i][1];
         allBuildings[i].buildingCode = buildingData[i][2];
-        allBuildings[i].campusName = buildingData[i][3];
-        allBuildings[i].isActive = buildingData[i][4];
+        allBuildings[i].description = buildingData[i][3];
+        allBuildings[i].campusName = buildingData[i][4];
+        allBuildings[i].isActive = buildingData[i][5];
+        allBuildings[i].doNotOptimize = buildingData[i][6];
+        allBuildings[i].noSchedule = buildingData[i][7];
+        allBuildings[i].arrangedSection = buildingData[i][8];
         allBuildings[i].index = i;
       }
       res.setHeader('Content-Type', 'application/json');
@@ -253,7 +303,7 @@ router.get('/buildings', (req, res, next) => {
 router.get('/campuses', (req, res, next) => {
  
   var qb = new ReadQueryBuilder();
-  qb.addFields(['Id', 'Name', 'IsActive']);
+  qb.addFields(['Id', 'SisKey', 'Name', 'IsActive', 'IsDefault', 'IsOnline', 'Description']);
   qb.sort = 'Name';
   qb.limit = 500;
   qb.queryType = QueryTypeEnum.ADVANCED;
@@ -267,8 +317,12 @@ router.get('/campuses', (req, res, next) => {
       for (let i = 0; i < campusData.length; i++) {
         allCampuses[i] = {};
         allCampuses[i].campusId = campusData[i][0];
-        allCampuses[i].campusName = campusData[i][1];
-        allCampuses[i].isActive = campusData[i][4];
+        allCampuses[i].sisKey = campusData[i][1];
+        allCampuses[i].campusName = campusData[i][2];
+        allCampuses[i].isActive = campusData[i][3];
+        allCampuses[i].isDefault = campusData[i][4];
+        allCampuses[i].isOnline = campusData[i][5];
+        allCampuses[i].description = campusData[i][6];
         allCampuses[i].index = i;
       }
       res.setHeader('Content-Type', 'application/json');
