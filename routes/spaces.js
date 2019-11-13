@@ -43,6 +43,7 @@ router.get('/rooms/availability', (req, res, next) => {
 
   let filterStartDate = req.query.start;
   let filterEndDate = req.query.end;
+  console.log('Starting GET');
 
   if (!filterStartDate || !filterEndDate) {
     res.sendStatus(400);
@@ -61,7 +62,9 @@ router.get('/rooms/availability', (req, res, next) => {
     const roomsUrl = config.defaultApi.url + config.defaultApi.roomSearchEndpoint + qb.toQueryString()
 
       var cq = new CredentialedQuery();
+      console.log('Got query object');
       cq.get(roomsUrl, res).then(function (response) {
+        console.log('Performing GET');
         let roomData = response.data.data;
         let rooms = []; 
         for (let i = 0; i < roomData.length; i++) {
@@ -122,22 +125,43 @@ router.get('/rooms/availability', (req, res, next) => {
  *     parameters:
  *       - name: roomId
  *         description: Unique identifier for the room 
- *         in: query
+ *         in: path
  *         required: true
  *         type: string
  *         format: string
- *       - name: start
- *         description: The beginning date and time 
- *         in: query
- *         required: true
- *         type: string
- *         format: date
- *       - name: end
- *         description: The ending date and time
- *         in: query
- *         required: true
- *         type: string
- *         format: date
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - start
+ *               - end
+ *               - userName
+ *               - userEmail
+ *               - name
+ *             properties:
+ *               start:
+ *                 description: The beginning date and time 
+ *                 type: string
+ *                 format: date
+ *               end:
+ *                 description: The ending date and time
+ *                 type: string
+ *                 format: date
+ *               userName:
+ *                 description: The full name of the user booking the event
+ *                 type: string
+ *                 format: string
+ *               userEmail:
+ *                 description: The email of the user booking the event
+ *                 type: string
+ *                 format: email
+ *               name:
+ *                 description: The name of the event
+ *                 type: string
+ *                 format: string
  *     produces:
  *       - application/json
  *     responses:
@@ -146,57 +170,43 @@ router.get('/rooms/availability', (req, res, next) => {
  *         schema:
  *           $ref: '#/definitions/Room'
  */
- router.post('/rooms/:id/reservation', async (req, res, next) => {
-  const roomId = req.params.id;
-  console.log(roomId);
-  // const start = req.query.start;
-  // const end = req.query.end;
-
+ router.post('/rooms/:roomId/reservation', async (req, res, next) => {
   // INPUTS
-  const userEmail = 'DemoUser@aais.com';
-  const userName = 'Demo User';
-  const eventName = 'Outlook Test Meeting';
-  // const from = new Date('2019-08-17 01:00:00.000');
-  // const to = new Date('2019-08-17 02:00:00.000');
-  // const roomId = '27e57397-1f8d-47e4-85f1-8963899fa0d9';
+  const roomId = req.params.roomId;
+  console.log(`roomId: ${roomId}`);
+  const userEmail = req.body.userEmail;
+  console.log(`userEmail: ${userEmail}`);
+  const userName = req.body.userName;
+  console.log(`userName: ${userName}`);
+  const eventName = req.body.name;
+  console.log(`eventName: ${eventName}`);
+  const from = new Date(req.body.start);
+  console.log(`from: ${from}`);
+  const to = new Date(req.body.end);
+  console.log(`to: ${to}`);
 
   // CONFIG
-  const institutionName = 'AS8DEMO1'; // todo RT - do we need this???????
-  // const baseUrl = 'http://qeapp/SG86044Merced';
-  // const username = 'sysadmin'; // I think this is already being config'd in the bridge API
-  // const password = 'apple';
-
-    const from = new Date('2019-08-17 01:00:00.000');
-    const to = new Date('2019-08-17 02:00:00.000');
-    const startDate = from.setHours(0,0,0,0);
-    const endDate = to.setHours(0,0,0,0);
-    const startMinute = from.getMinutes();
-    const endMinute = to.getMinutes();
-
-  // const startDate = start.setHours(0,0,0,0);
-  // const endDate = end.setHours(0,0,0,0);
-  // const startMinute = start.getMinutes();
-  // const endMinute = end.getMinutes();
-  console.log(`${startDate} , ${endDate} , ${startMinute} , ${endMinute}`);
-  const description = `This event was created by ${userName} (${userEmail}) and automatically created here by the Ad Astra Outlook Add-in.`;
-  const currentYear = new Date().getFullYear().toString(); // this is needed to craft the request number
-
+  // const institutionName = 'AS8DEMO1'; // todo RT - do we need this???????
   const customerName = 'Outlook';
   const customerContactName = 'Outlook'; // This is the username, not full name
 
+  const startMinute = from.getMinutes() + (from.getHours() * 60);
+  const endMinute = to.getMinutes() + (to.getHours() * 60);
+  const startDate = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+  const endDate = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+  const duration = endMinute - startMinute;
+  const formattedStartDate = `${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}%2000%3A00%3A00`;
+  const formattedEndDate = `${to.getFullYear()}-${to.getMonth() + 1}-${to.getDate()}%2000%3A00%3A00`;
+  const currentYear = new Date().getFullYear().toString(); // this is needed to craft the request number
+
+  const description = `This event was created by ${userName} (${userEmail}) and automatically created here by the Ad Astra Outlook Add-in.`;
+
   const eventId = uuidv4();
   const eventMeetingId = uuidv4();
-  const eventRequestId = uuidv4();
-  const eventRequestMeetingId = uuidv4();
   const eventMeetingResourceId = uuidv4();
-
-  // axios.defaults.withCredentials = true;
-  // axiosCookieJarSupport(axios);
-  // const cookieJar = new tough.CookieJar();
-
-  // await axios.post(`${baseUrl}/logon.ashx`, { username, password }, { jar: cookieJar }).then((response) => {
-  //     console.log(JSON.stringify(response.data));
-  // }).catch((error) => { console.error(error); });
+  console.log(`eventId: ${eventId}`);
+  console.log(`eventMeetingId: ${eventMeetingId}`);
+  console.log(`eventMeetingResourceId: ${eventMeetingResourceId}`);
 
   let roomNumber = '';
   let roomName = '';
@@ -205,18 +215,23 @@ router.get('/rooms/availability', (req, res, next) => {
   let campusName = '';
   let roomSisKey = '';
 
+  var cq = new CredentialedQuery();
+  var cookies = null;
+  var cookieJar = null;
+  await cq.login().then((login) => {
+    console.log('Login successful');
+    cookies = login.cookies;
+    cookieJar = login.cookieJar;
+  });
+
   var qb = new ReadQueryBuilder();
   qb.addFields(['Id', 'Name', 'roomNumber', 'RoomType.Name', 'Building.Name', 'Building.BuildingCode']);
   qb.addFields(['MaxOccupancy', 'IsActive', 'Building.Campus.Name', 'SisKey']);
   qb.addFilterFields('Id');
   qb.addFilterValues(roomId);
 
-
-
-  var cq = new CredentialedQuery();
   const roomLookupUrl = config.defaultApi.url + config.defaultApi.roomsEndpoint + qb.toQueryString();  
-  await cq.get(roomLookupUrl, res).then(function (response) {
-    console.log('#### ' + response.data.data); // todo RT remove this 
+  await cq.get(roomLookupUrl, res, cookies, cookieJar).then(function (response) {
     let room = response.data.data[0];
     roomName = room[1];
     roomNumber = room[2];
@@ -224,42 +239,40 @@ router.get('/rooms/availability', (req, res, next) => {
     buildingCode = room[5];
     campusName = room[8];
     roomSisKey = room[9];
-    console.log(`roomName = ${roomName}`);
-    console.log(`roomNumber = ${roomNumber}`);
-    console.log(`buildingName = ${buildingName}`);
-    console.log(`buildingCode = ${buildingCode}`);
-    console.log(`campusName = ${campusName}`);
-    console.log(`roomSisKey = ${roomSisKey}`);
+    console.log(`roomName: ${roomName}`);
+    console.log(`roomNumber: ${roomNumber}`);
+    console.log(`buildingName: ${buildingName}`);
+    console.log(`buildingCode: ${buildingCode}`);
+    console.log(`campusName: ${campusName}`);
+    console.log(`roomSisKey: ${roomSisKey}`);
   }).catch((error) => { console.error(error); });
   
   let eventRequestFormId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/EventReqForm?fields=Id,Name&filter=IsActive==1`, res).then((response) => {
+  await cq.get(`${config.defaultApi.url}~api/query/EventReqForm?fields=Id,Name&filter=IsActive==1`, res, cookies, cookieJar).then((response) => {
       eventRequestFormId = response.data.data[0][0];
-      console.log(`eventRequestFormId = ${eventRequestFormId}`);
+      console.log(`eventRequestFormId: ${eventRequestFormId}`);
   }).catch((error) => { console.error(error); });
 
-
   let roomConfigurationId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/roomconfiguration?fields=Id%2CIsActive&filter=RoomId=="${roomId}"%26%26IsActive==1%26%26IsDefault==1`, res).then((response) => {
-      roomConfigurationId = response.data.data[0][0];
-      console.log(`roomConfigurationId = ${roomConfigurationId}`);
+  await cq.get(`${config.defaultApi.url}~api/query/roomconfiguration?fields=Id%2CIsActive&filter=RoomId=="${roomId}"%26%26IsActive==1%26%26IsDefault==1`, res, cookies, cookieJar).then((response) => {
+    roomConfigurationId = response.data.data[0][0];
+    console.log(`roomConfigurationId: ${roomConfigurationId}`);
   }).catch((error) => { console.error(error); });
 
   // todo RT - need to revisit institution Id?  
   let institutionId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/organization?fields=Id,name,isactive,InstanceName`, res).then((response) => {
+  await cq.get(`${config.defaultApi.url}~api/query/organization?fields=Id,name,isactive,InstanceName`, res, cookies, cookieJar).then((response) => {
       // Only pull active institutions that match the InstanceName
       response.data.data.map((institution) => {
-          if (institution[3] == institutionName && institution[2]) {
+          if (institution[2]) {
               institutionId = institution[0];
-          }    
+            }    
       });
-      console.log(`institutionId = ${institutionId}`);
+      console.log(`institutionId: ${institutionId}`);
   }).catch((error) => { console.error(error); });
 
-    
   let currentMaxRequestNumber = 0;
-  await cq.get(`${config.defaultApi.url}/~api/query/eventrequest?fields=RequestNumber&sortOrder=-RequestNumber&Limit=1`, res).then((response) => {
+  await cq.get(`${config.defaultApi.url}~api/query/eventrequest?fields=RequestNumber&sortOrder=-RequestNumber&Limit=1`, res, cookies, cookieJar).then((response) => {
       response.data.data.map((requestNumber) => {
           let year = requestNumber[0].split('-')[0];
           let number = parseInt(requestNumber[0].split('-')[1]);
@@ -267,339 +280,202 @@ router.get('/rooms/availability', (req, res, next) => {
               currentMaxRequestNumber = number;
           }
       });
-      console.log(`currentMaxRequestNumber = ${currentMaxRequestNumber}`);
+      console.log(`currentMaxRequestNumber: ${currentMaxRequestNumber}`);
   }).catch((error) => { console.error(error); });
 
   const requestNumber = `${currentYear}-${(currentMaxRequestNumber + 1).toString().padStart(5, '0')}`;
-  console.log(`requestNumber = ${requestNumber}`);
+  console.log(`requestNumber: ${requestNumber}`);
 
   let reservationNumber = '';
-  await cq.get(`${config.defaultApi.url}/~api/events/GetReservationNumber`, res).then((response) => {
+  await cq.get(`${config.defaultApi.url}~api/events/GetReservationNumber`, res, cookies, cookieJar).then((response) => {
       reservationNumber = response.data;
-      console.log(`reservationNumber = ${reservationNumber}`);
+      console.log(`reservationNumber: ${reservationNumber}`);
   }).catch((error) => { console.error(error); });
 
-
   let customerId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/customer?filter=Name%3D%3D%22${customerName}%22&fields=Id,Name`, res).then((response) => {
+  await cq.get(`${config.defaultApi.url}~api/query/customer?filter=Name%3D%3D%22${customerName}%22&fields=Id,Name`, res, cookies, cookieJar).then((response) => {
       customerId = response.data.data[0][0];
-      console.log(`customerId = ${customerId}`);
+      console.log(`customerId: ${customerId}`);
   }).catch((error) => { console.error(error); });
 
   let customerContactId = '';
-  await cq.get(`${config.defaultApi.url}/~api/query/user?filter=UserName%3D%3D%22${customerContactName}%22%26%26IsActive%3D%3D1&fields=Id,UserName,IsActive`, res).then((response) => {
-      customerContactId = response.data.data[0][0];
-      console.log(`customerContactId = ${customerContactId}`);
-  }).catch((error) => { console.error(error); });
+  let personId = '';
+  await cq.get(`${config.defaultApi.url}~api/query/customercontact?filter=CustomerId%3D%3D%22${customerId}%22%26%26IsActive%3D%3D1%26%26IsPrimaryContact%3D%3D1&fields=Id,PersonId,IsActive`, res, cookies, cookieJar).then((response) => {
+    customerContactId = response.data.data[0][0];
+    personId = response.data.data[0][1];
+    console.log(`customerContactId: ${customerContactId}`);
+    console.log(`personId: ${personId}`);
+}).catch((error) => { console.error(error); });
 
+let customerContactFullName = '';
+await cq.get(`${config.defaultApi.url}~api/query/people?filter=Id%3D%3D%22${personId}%22%26%26IsActive%3D%3D1&fields=FirstName,LastName`, res, cookies, cookieJar).then((response) => {
+    customerContactFullName = `${response.data.data[0][1]}, ${response.data.data[0][0]}`;
+    console.log(`customerContactFullName: ${customerContactFullName}`);
+}).catch((error) => { console.error(error); });
+
+let userId = '';
+await cq.get(`${config.defaultApi.url}~api/query/user?filter=PersonId%3D%3D%22${personId}%22%26%26IsActive%3D%3D1&fields=Id,UserName,IsActive`, res, cookies, cookieJar).then((response) => {
+    userId = response.data.data[0][0];
+    console.log(`userId: ${userId}`);
+}).catch((error) => { console.error(error); });
 
   // TODO Unsure what event type to use for this - is 'Unknown' standard?
-  // await cq.get(`${config.defaultApi.url}/~api/query/EventType?fields=Id,Name&filter=IsActive%3D%3D1`, res).then((response) => {
-  //   console.log(response);
-  // }).catch((error) => { console.error(error); });
+  let eventTypeId = '';
+  let eventTypeName = '';
+  await cq.get(`${config.defaultApi.url}~api/query/EventType?fields=Id,Name&filter=IsActive%3D%3D1`, res, cookies, cookieJar).then((response) => {
+    eventTypeId = response.data.data[0][0];
+    eventTypeName = response.data.data[0][1];
+    console.log(`eventTypeId: ${eventTypeId}`);
+    console.log(`eventTypeName: ${eventTypeName}`);
+  }).catch((error) => { console.error(error); });
 
-  // let eventTypeId = null; 
-  // let eventTypeName = null;
-  // console.log(`eventTypeId = ${eventTypeId}`);
-  // console.log(`eventTypeName = ${eventTypeName}`);
+  await cq.get(`${config.defaultApi.url}~api/scheduling/adhocroomevent?incRmsWActConflicts=true&showOnlyAvailableRooms=false&startDate=${formattedStartDate}&endDate=${formattedEndDate}&mtgInstances=[{"Id":"${eventId}","MeetingId":"${eventId}","Name":"${eventName}","MeetingDate":"${formattedStartDate}","DayMask":0,"StartMinute":${startMinute},"Duration":${duration},"IsException":false,"IsCancellation":false,"Displayed":false}]&prefRooms=${roomId}&page=1&start=0&limit=25`, res, cookies, cookieJar).then((response) => {
+    console.log('Ad hoc room event call succeeded');
+  }).catch((error) => { console.error(error); });
 
-    const postBody = JSON.stringify({
-        "Event": {
-            "+": [
-                {
-                    "Id": eventId,
-                    "AccountingKey": null,
-                    "AllowAttendeeSignUp": false,
-                    "CustomerContactName": customerName,
-                    "CustomerContactId": customerContactId,
-                    "PrimaryCustomerContactId": customerContactId,
-                    "CustomerId": customerId,
-                    "CustomerName": customerName,
-                    "Description": null, //description,
-                    "DoNotifyPrimaryContact": true,
-                    "EditCounter": 0,
-                    "EstimatedAttendance": 0,
-                    "EventOwnerName": "Administrator, System", //"", // ??
-                    "EventRequestId": null, //eventRequestId,
-                    "EventTypeId": "4c7bc919-329a-4298-a502-c886a2bb2785", //eventTypeId,
-                    "EventTypeName": "Administrative", //eventTypeName,
-                    "ExternalDescriptionId": null,
-                    "InstitutionContactId": null,
-                    "InstitutionId": "fceb4a8d-d166-4762-9572-01f91b89b27d",//institutionId,
-                    "IsFeatured": false,
-                    "IsPrivate": false,
-                    "LastImportedDate": null,
-                    "LastSisUpdateDate": null,
-                    "Name": "Ryan Outlook Test", //"",
-                    "Notify": null,
-                    "NextMeetingNumber": 0,
-                    "OwnerId": customerContactId,
-                    "PrimaryCustomerContactId": customerContactId,
-                    "RecordableAttendeeType": 0, //null,
-                    "RequiresAttention": false,
-                    "RequiresAttentionReason": null,
-                    "ReservationNumber": reservationNumber,
-                    "SisKey": null, //roomSisKey,
-                    "StatusText": "",
-                    "UploadedPictureId": null,
-                    "WorkflowInstanceId": null,
-                    "WorkflowIntent": "S",
-                    "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3", //null,
-                    "WorkflowState": null
-                }
-            ]
-        },
-        "EventRequestMeeting": {
-            "+": [
-                {
-                    "Id": eventRequestMeetingId,
-                    "Description": description,
-                    "EndDate": endDate,
-                    "EndMinute": endMinute,
-                    "EventMeetingTypeId": null,
-                    "EventReqMeetingGroupId": null,
-                    "EventRequestId": eventRequestId,
-                    "IsFeaturedEvent": false,
-                    "IsPrivateEvent": false,
-                    "IsRoomRequired": true,
-                    "LastImportedDate": null,
-                    "LastSisUpdateDate": null,
-                    "MaxAttendance": null,
-                    "Name": eventName,
-                    "RecurrencePatternId": null,
-                    "RequiresAttention": false,
-                    "RequiresAttentionReason": null,
-                    "RoomConfigurationId": roomConfigurationId, // Not sure if this is needed
-                    "SisKey": roomSisKey,
-                    "StartDate": startDate,
-                    "StartMinute": startMinute
-                }
-            ]
-        },
-        "EventMeeting": {
-            "+": [
-                {
-                    "Id": eventMeetingId,
-                    "AccountingKey": null,
-                    "ActualAttendance": 0, //null,
-                    "BuildingRoom": "Adams Hall 102", //`${buildingName} ${roomName}`,
-                    "ConflictDesc": "",
-                    "ConflictsWithHoliday": false,
-                    "CustomerContactId": customerContactId,
-                    "CustomerContactName": customerContactName,
-                    "CustomerId": customerId,
-                    "CustomerName": customerName,
-                    "DaysMask": 0, //null,
-                    "Description": null,
-                    "Duration": 0, //(endMinute - startMinute),
-                    "EndDate": "2019-10-16T00:00:00",//endDate,
-                    "EndMinute": 1110, //endMinute,
-                    "EventId": eventId,
-                    "EventMeetingGroupId": null,
-                    "EventMeetingTypeId": null,
-                    "EventMeetingTypeName": "",
-                    "EventRequestMeetingId": "", //eventRequestMeetingId,
-                    "InstitutionContactId": null,
-                    "IsException": false, //null,
-                    "IsFeatured": false,
-                    "IsPrivate": false,
-                    "IsRoomRequired": true,
-                    "IsUsageOutDated": false, //null,
-                    "LastImportedDate": null,
-                    "LastSisUpdateDate": null,
-                    "MaxAttendance": 0, //null,
-                    "MeetingNumber": 0,
-                    "Name": "Ryan Outlook Test", //eventName,
-                    "OwnerId": customerContactId,
-                    "RecurrencePatternId": null,
-                    "RequiresAttention": false,
-                    "RequiresAttentionReason": null,
-                    "ResourcesSummary": "",
-                    "SisKey": null, // roomSisKey,
-                    "StartDate": "2019-10-16T00:00:00", //startDate,
-                    "StartMinute": 1080, //startMinute,
-                    "StatusText": "",
-                    "WorkflowIntent": "S",
-                    "WorkflowIntentOwnerId": customerContactId,
-                    "WorkflowState": null
-                }
-            ]
-        },
+  let postBody = JSON.stringify({
+    "Event": {
+        "+": [
+            {
+                "Id": eventId,
+                "AccountingKey": null,
+                "AllowAttendeeSignUp": false,
+                "CustomerId": customerId,
+                "CustomerName": customerName,
+                "Description": description,
+                "DoNotifyPrimaryContact": true,
+                "EditCounter": 0,
+                "EstimatedAttendance": 0, // can we get number of invitees?
+                "EventRequestId": null,
+                "EventTypeId": eventTypeId,
+                "EventTypeName": eventTypeName,
+                "ExternalDescriptionId": null,
+                "InstitutionContactId": null,
+                "InstitutionId": institutionId,
+                "IsFeatured": false,
+                "IsPrivate": false,
+                "LastImportedDate": null,
+                "LastSisUpdateDate": null,
+                "Name": eventName,
+                "Notify": null,
+                "OwnerId": userId,
+                "PrimaryCustomerContactId": customerContactId,
+                "CustomerContactId": customerContactId,
+                "CustomerName": customerName,
+                "CustomerContactName": customerContactFullName,
+                "RecordableAttendeeType": 0,
+                "RequiresAttention": false,
+                "RequiresAttentionReason": null,
+                "ReservationNumber": reservationNumber,
+                "SisKey": null,
+                "WorkflowInstanceId": null,
+                "WorkflowIntent": "S",
+                "WorkflowIntentOwnerId": userId,
+                "NextMeetingNumber": 0,
+                "UploadedPictureId": null,
+                "EventOwnerName": customerContactFullName,
+                "StatusText": "",
+                "WorkflowState": null
+            }
+        ]
+    },
+    "EventMeeting": {
+        "+": [
+            {
+                "Id": eventMeetingId,
+                "CustomerContactId": customerContactId,
+                "ActualAttendance": 0,
+                "BuildingRoom": `${buildingCode} ${roomName}`,
+                "ConflictDesc": "",
+                "ConflictsWithHoliday": false,
+                "CustomerId": customerId,
+                "CustomerName": customerName,
+                "DaysMask": 0,
+                "Description": null,
+                "Duration": duration,
+                "EndDate": endDate,
+                "EndMinute": endMinute,
+                "EventId": eventId,
+                "IsException": false,
+                "IsFeatured": false,
+                "IsPrivate": false,
+                "IsRoomRequired": true,
+                "IsUsageOutDated": false,
+                "LastImportedDate": null,
+                "LastSisUpdateDate": null,
+                "MaxAttendance": 0,
+                "MeetingNumber": 0,
+                "Name": eventName,
+                "OwnerId": userId,
+                "RecurrencePatternId": null,
+                "RequiresAttention": false,
+                "RequiresAttentionReason": null,
+                "ResourcesSummary": "",
+                "SisKey": null,
+                "StartDate": startDate,
+                "StartMinute": startMinute,
+                "StatusText": "",
+                "WorkflowIntent": "S",
+                "WorkflowIntentOwnerId": userId,
+                "EventMeetingTypeId": null,
+                "EventMeetingGroupId": null,
+                "InstitutionContactId": null,
+                "AccountingKey": null,
+                "EventMeetingTypeName": "",
+                "EventRequestMeetingId": "",
+                "CustomerContactName": customerContactFullName,
+                "WorkflowState": null
+            }
+        ]
+    },
         "EventMeetingResource": {
             "+": [
                 {
-                    "AllowDoubleBookMask": 0,
-                    "CampusName": "", //campusName,
-                    "ConflictingActivityId": null,
-                    "ConflictingActivityTypeCode": 0,
-                    // "CreatedBy": null,
-                    "Description":  "Adams Hall 102", //`${buildingName} ${roomName}`,
-                    "EndDate": null,          
-                    "EndMinute": 0,
-                    "EventMeetingId": eventMeetingId,
-                    "FailedAvailabilityCheck": false,
-                    "Id": eventMeetingResourceId,
-                    "LastSisUpdateDate": null,
-                    "LastImportedDate": null,
-                    // "ModifiedBy": null,
-                    "MoveWithMeeting": true,
-                    // "Name": "",
-                    "RequiresAttention": false,
-                    "RequiresAttentionReason": null,
-                    "ResourceId": roomConfigurationId,
-                    "ResourceName":  "Adams Hall 102",//`${buildingCode} ${roomNumber}`,
-                    "ResourceTypeCode": 49, // 49 is the hardcoded code for the Room type
-                    "ResourceReservationId": null,
-                    "ScheduledBy": null,
-                    "ScheduledDate": null,              
-                    "SelectedQty": 1,
-                    "SisKey": null,
-                    "StatusText": "",
-                    "StartDate": null,
-                    "StartMinute": 0,         
-                    "UsageTypeCode": 0, //2, // Need to look into whether this works with a request
-                    "WorkflowIntent": "S",
-                    "WorkflowIntentOwnerId": customerContactId,
-                    "WorkflowState": null
+                  "Id": eventMeetingResourceId,
+                  "ResourceTypeCode": 49,
+                  "ResourceId": roomConfigurationId,
+                  "ResourceReservationId": null,
+                  "SelectedQty": 1,
+                  "WorkflowIntent": "S",
+                  "WorkflowIntentOwnerId": userId,
+                  "WorkflowState": null,
+                  "UsageTypeCode": 2,
+                  "EventMeetingId": eventMeetingId,
+                  "MoveWithMeeting": true,
+                  "FailedAvailabilityCheck": false,
+                  "Description": `${buildingCode} ${roomName}`,
+                  "ScheduledBy": null,
+                  "ScheduledDate": null,
+                  "ConflictingActivityId": null,
+                  "ConflictingActivityTypeCode": null, // !
+                  "AllowDoubleBookMask": 0, // !
+                  "SisKey": null,
+                  "LastSisUpdateDate": null,
+                  "LastImportedDate": null,
+                  "RequiresAttention": false,
+                  "RequiresAttentionReason": null,
+                  "ResourceName": `${buildingCode} ${roomName}`,
+                  "CampusName": campusName,
+                  "StatusText": "",
+                  "StartDate": null,
+                  "EndDate": null,
+                  "StartMinute": startMinute,
+                  "EndMinute": endMinute  
                 }
             ]
         }
     });
 
-    console.log(`postBody = ${postBody}`);
+    await cq.post(`${config.defaultApi.url}~api/Entity`, postBody, res, cookies, cookieJar).then((response) => {
+      console.log('Entity call succeeded');
+    }).catch((error) => { console.error(error); });
 
-    await cq.post(`${config.defaultApi.url}/~api/Entity`, postBody, res).then((response) => {
-        console.log(JSON.stringify(response.data));
-        res.sendStatus(200);
-      }).catch((error) => { console.error(error); });
-
-
+    await cq.get(`${config.defaultApi.url}~api/workflow/event?eventId=${eventId}`, res, cookies, cookieJar).then((response) => {
+      console.log('Workflow call succeeded');
+    }).catch((error) => { console.error(error); });
+    
+    // TODO what should we return?
+    res.send({ eventId, eventMeetingId, eventMeetingResourceId });
 });
 
-
-{
-	"Event": {
-		"+": [{
-			  "Id": "761e9671-eb09-11e9-a234-0112467ade44",
-			  "ReservationNumber": "20191009-00006",
-			  "Name": "Ryan Outlook Test",
-			  "WorkflowInstanceId": null,
-			  "EditCounter": 0,
-			  "WorkflowIntent": "S",
-			  "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3",
-			  "WorkflowState": null,
-			  "EventTypeId": "4c7bc919-329a-4298-a502-c886a2bb2785",
-			  "CustomerId": "b0661fc2-a8ad-11e4-8aab-277e3893bef1",
-			  "PrimaryCustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf",
-			  "DoNotifyPrimaryContact": true,
-			  "EstimatedAttendance": 0,
-			  "InstitutionContactId": null,
-			  "IsFeatured": false,
-			  "IsPrivate": false,
-			  "RecordableAttendeeType": 0,
-			  "AllowAttendeeSignUp": false,
-			  "Description": null,
-			  "ExternalDescriptionId": null,
-			  "OwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3",
-			  "InstitutionId": "fceb4a8d-d166-4762-9572-01f91b89b27d",
-			  "EventRequestId": null,
-			  "AccountingKey": null,
-			  "NextMeetingNumber": 0,
-			  "UploadedPictureId": null,
-			  "SisKey": null,
-			  "LastSisUpdateDate": null,
-			  "LastImportedDate": null,
-			  "RequiresAttention": false,
-			  "RequiresAttentionReason": null,
-			  "EventTypeName": "Administrative",
-			  "EventOwnerName": "Administrator, System",
-			  "CustomerName": "Chi Omega (Chi O)",
-			  "CustomerContactName": "Aasness, Albert",
-			  "StatusText": "",
-			  "CustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf",
-			  "Notify": null
-		}]
-	},
-	"EventMeeting": {
-		"+": [{
-			  "Id": "761e9672-eb09-11e9-a234-0112467ade44",
-			  "MeetingNumber": 0,
-			  "Name": "Ryan Outlook Test",
-			  "EventId": "761e9671-eb09-11e9-a234-0112467ade44",
-			  "WorkflowIntent": "S",
-			  "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3",
-		  	"WorkflowState": null,
-			  "IsRoomRequired": true,
-			  "EventMeetingTypeId": null,
-			  "EventMeetingGroupId": null,
-			  "StartDate": "2019-10-16T00:00:00",
-			  "EndDate": "2019-10-16T00:00:00",
-			  "DaysMask": 0,
-			  "StartMinute": 1080,
-			  "EndMinute": 1110,
-			  "RecurrencePatternId": null,
-			  "MaxAttendance": 0,
-			  "ActualAttendance": 0,
-			  "CustomerContactId": "5cbccd60-b892-11e4-a947-17c0833f6baf",
-			  "InstitutionContactId": null,
-			  "IsFeatured": false,
-			  "IsPrivate": false,
-			  "IsException": false,
-			  "Description": null,
-			  "OwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3",
-			  "AccountingKey": null,
-			  "IsUsageOutDated": false,
-			  "SisKey": null,
-			  "LastSisUpdateDate": null,
-			  "LastImportedDate": null,
-			  "RequiresAttention": false,
-			  "RequiresAttentionReason": null,
-			  "BuildingRoom": "Adams Hall 102",
-			  "EventMeetingTypeName": "",
-			  "EventRequestMeetingId": "",
-			  "CustomerName": "",
-			  "CustomerId": "",
-			  "CustomerContactName": "",
-			  "Duration": 0,
-			  "StatusText": "",
-			  "ConflictsWithHoliday": false,
-			  "ConflictDesc": "",
-			  "ResourcesSummary": ""
-		}]
-	},
-	"EventMeetingResource": {
-		"+": [{
-			    "Id": "761e9673-eb09-11e9-a234-0112467ade44",
-			    "ResourceTypeCode": 49,
-			    "ResourceId": "270d2b74-aa97-4048-bda6-6e9cbd635de5",
-          "ResourceReservationId": null,
-			    "SelectedQty": 1,
-			    "WorkflowIntent": "S",
-			    "WorkflowIntentOwnerId": "da30a6dd-04ae-4453-8c53-4622dd2c5da3",
-			    "WorkflowState": null,
-			    "UsageTypeCode": 0,
-			    "EventMeetingId": "761e9672-eb09-11e9-a234-0112467ade44",
-			    "MoveWithMeeting": true,
-			    "FailedAvailabilityCheck": false,
-			    "Description": "Adams Hall 102",
-			    "ScheduledBy": null,
-			    "ScheduledDate": null,
-			    "ConflictingActivityId": null,
-			    "ConflictingActivityTypeCode": 0,
-			    "AllowDoubleBookMask": 0,
-			    "SisKey": null,
-			    "LastSisUpdateDate": null,
-			    "LastImportedDate": null,
-			    "RequiresAttention": false,
-			    "RequiresAttentionReason": null,
-			    "ResourceName": "Adams Hall 102",
-			    "CampusName": "",
-			    "StatusText": "",
-			    "StartDate": null,
-			    "EndDate": null,
-			    "StartMinute": 0,
-			    "EndMinute": 0
-		}]
-	}
-}
 module.exports = router;
