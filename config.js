@@ -7,6 +7,7 @@ config.defaultApi = {
   "username" : process.env.API_USER || 'username',
   "password" :  process.env.API_PASSWORD || 'password',
   "instanceName" :  process.env.INSTANCE_NAME || 'instanceName',
+  "eventTypeName" :  process.env.EVENT_TYPE_NAME || 'eventTypeName',
   "customerName" :  process.env.CUSTOMER_NAME || 'Outlook',
   "logonEndpoint" : 'Logon.ashx',
   "activityListEndpoint": '~api/calendar/activityList?',

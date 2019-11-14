@@ -186,6 +186,7 @@ router.post('/rooms/:roomId/reservation', async (req, res, next) => {
 
   const instanceName = config.defaultApi.instanceName;
   const customerName = config.defaultApi.customerName;
+  const eventTypeName = config.defaultApi.eventTypeName;
   const url = config.defaultApi.url;
 
   const startMinute = from.getMinutes() + (from.getHours() * 60);
@@ -308,14 +309,14 @@ router.post('/rooms/:roomId/reservation', async (req, res, next) => {
     console.log(`userId: ${userId}`);
   }).catch((error) => { console.error(error); });
 
-  // TODO Unsure what event type to use for this - is 'Unknown' standard?
   let eventTypeId = '';
-  let eventTypeName = '';
   await cq.get(`${url}~api/query/EventType?fields=Id,Name&filter=IsActive%3D%3D1`, res, cookies, cookieJar).then((response) => {
-    eventTypeId = response.data.data[0][0];
-    eventTypeName = response.data.data[0][1];
+    response.data.data.map((eventType) => {
+      if (eventTypeName == eventType[1]) {
+        eventTypeId = eventType[0];
+      }
+    });
     console.log(`eventTypeId: ${eventTypeId}`);
-    console.log(`eventTypeName: ${eventTypeName}`);
   }).catch((error) => { console.error(error); });
 
   await cq.get(`${url}~api/scheduling/adhocroomevent?incRmsWActConflicts=true&showOnlyAvailableRooms=false&startDate=${formattedStartDate}&endDate=${formattedEndDate}&mtgInstances=[{"Id":"${eventId}","MeetingId":"${eventId}","Name":"${eventName}","MeetingDate":"${formattedStartDate}","DayMask":0,"StartMinute":${startMinute},"Duration":${duration},"IsException":false,"IsCancellation":false,"Displayed":false}]&prefRooms=${roomId}&page=1&start=0&limit=25`, res, cookies, cookieJar).then((response) => {
