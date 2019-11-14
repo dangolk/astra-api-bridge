@@ -58,8 +58,7 @@ router.get('/rooms/availability', (req, res, next) => {
     var doNotSchedule = 'DoNotSchedule == 0';
 
     qb.advancedFilter = encodeURIComponent(end + '&&' + start + '&&' + doNotSchedule);
-
-    const roomsUrl = url + config.defaultApi.roomSearchEndpoint + qb.toQueryString()
+    const roomsUrl = config.defaultApi.url + config.defaultApi.roomSearchEndpoint + qb.toQueryString()
 
     var cq = new CredentialedQuery();
     console.log('Got query object');
@@ -86,7 +85,7 @@ router.get('/rooms/availability', (req, res, next) => {
         `&filter=(((StartDate%3C%22${start2}%22)%26%26(EndDate%3E%22${end2}%22))%26%26((NotAllowedUsageMask%3D%3Dnull)%7C%7C((NotAllowedUsageMask%268)%3D%3D8)))` +
         '&sortOrder=%2BStartDate%2C%2BStartMinute&page=1&group=%7B%22property%22%3A%22StartDate%22%2C%22direction%22%3A%22ASC%22%7D&sort=%5B%7B%22property%22%3A%22StartDate%22%2C%22direction%22%3A%22ASC%22%7D%2C%7B%22property%22%3A%22StartMinute%22%2C%22direction%22%3A%22ASC%22%7D%5D'
 
-      const url = url + config.defaultApi.calendarWeekGridEndpoint + secondaryQuery;
+      const url = config.defaultApi.url + config.defaultApi.calendarWeekGridEndpoint + secondaryQuery;
       cq.get(url, res).then(function (response) {
         res.setHeader('Content-Type', 'application/json');
 
@@ -335,7 +334,7 @@ router.post('/rooms/:roomId/reservation', async (req, res, next) => {
           "Description": description,
           "DoNotifyPrimaryContact": true,
           "EditCounter": 0,
-          "EstimatedAttendance": 0, // can we get number of invitees?
+          "EstimatedAttendance": 0,
           "EventRequestId": null,
           "EventTypeId": eventTypeId,
           "EventTypeName": eventTypeName,
