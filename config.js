@@ -18,7 +18,12 @@ config.defaultApi = {
   "entityFeatureEndpoint": '~api/entity/Room/RoomFeatureQuantities/',
   "roomSearchEndpoint": '~api/resources/roomlist?',
   "roleEndpoint": '~api/query/role?',
-  "permEndpoint": '~api/query/permission?'
+  "permEndpoint": '~api/query/permission?',
+  "students": '~api/query/Student?',
+  "pathways": '~api/query/roadmap?',
+  "pathwayCourses": '~api/query/VStudentPlanCourseDetail?',
+  "studentCourses": '~api/entity/RoadMap/RoadMapCourses/',
+  "courseGroupCourses": '~api/entity/CourseGroup/CourseGroupCourses/',
 }
 
 module.exports = config;

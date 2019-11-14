@@ -8,6 +8,7 @@ var activitiesRouter = require('./routes/activities');
 var activityTypesRouter = require('./routes/activityTypes');
 var facilitiesRouter = require('./routes/facilities');
 var spacesRouter = require('./routes/spaces');
+var navigateRouter = require('./routes/navigate');
 var userSettingsRouter = require('./routes/userSettings');
 
 
@@ -24,6 +25,7 @@ app.use('/activities', activitiesRouter);
 app.use('/activity-types', activityTypesRouter);
 app.use('/facilities', facilitiesRouter);
 app.use('/spaces', spacesRouter);
+app.use('/navigate', navigateRouter);
 app.use('/userSettings', userSettingsRouter);
 
 
