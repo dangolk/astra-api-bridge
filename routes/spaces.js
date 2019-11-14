@@ -150,7 +150,7 @@ router.get('/rooms', async (req, res, next) => {
     ]);
    qb.sort = '%2BBuilding.Name,Name';
    qb.queryType = QueryTypeEnum.ADVANCED;  
-   qb.limit = 500;
+   qb.limit = 100;
 
    var fq = new ReadQueryBuilder();
    fq.addFields([
@@ -242,6 +242,7 @@ router.get('/buildings', (req, res, next) => {
     'BuildingCode',
     'Description',
     'Campus.Name',
+    'Campus.Siskey',
     'IsActive',
     'DoNotOptimize',
     'NoSchedule',
@@ -269,10 +270,11 @@ router.get('/buildings', (req, res, next) => {
         allBuildings[i].buildingCode = buildingData[i][2];
         allBuildings[i].description = buildingData[i][3];
         allBuildings[i].campusName = buildingData[i][4];
-        allBuildings[i].isActive = buildingData[i][5];
-        allBuildings[i].doNotOptimize = buildingData[i][6];
-        allBuildings[i].noSchedule = buildingData[i][7];
-        allBuildings[i].arrangedSection = buildingData[i][8];
+        allBuildings[i].campusCode = buildingData[i][5];
+        allBuildings[i].isActive = buildingData[i][6];
+        allBuildings[i].doNotOptimize = buildingData[i][7];
+        allBuildings[i].noSchedule = buildingData[i][8];
+        allBuildings[i].arrangedSection = buildingData[i][9];
         allBuildings[i].index = i;
       }
       res.setHeader('Content-Type', 'application/json');
