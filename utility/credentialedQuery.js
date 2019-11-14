@@ -1,13 +1,13 @@
 "use strict";
 
-var axios = require('axios'); // remove this after outsourcing credentialed queries
+var axios = require('axios');
 const axiosCookieJarSupport = require('axios-cookiejar-support').default;
 const tough = require('tough-cookie');
 const config = require('../config');
 
 module.exports = class CredentialedQuery {
 
-  constructor() {}
+  constructor() { }
 
   async login() {
     console.log('Logging in');
@@ -18,38 +18,37 @@ module.exports = class CredentialedQuery {
       password: config.defaultApi.password,
     };
 
-    // does this have to be here??? 
     axiosCookieJarSupport(axios);
     const cookieJar = new tough.CookieJar();
 
     var promise = new Promise(function (resolve, reject) {
       axios.post(logonUrl, credentialData, {
-      jar: cookieJar,
-      headers: {
+        jar: cookieJar,
+        headers: {
           withCredentials: true,
-      }
-    }).then(function (response) {
-      if (response.data !== true) {
-        res.sendStatus(401);
-        reject('Login request failed'); // need test
-      } else {
-        cookieJar.store.getAllCookies(function (err, cookies) {
-          if (cookies === undefined) {
-            res.send('failed to get cookies after login');
-            reject('Cookie error'); // need test
-          } else {
-            console.log('Login successful');
-            resolve({cookies, cookieJar});
-          }
-        });
-      }
-    }).catch(function (error) {
-      console.log(error);
-      reject('respond with a resource - error ' + error);
+        }
+      }).then(function (response) {
+        if (response.data !== true) {
+          res.sendStatus(401);
+          reject('Login request failed'); // need test
+        } else {
+          cookieJar.store.getAllCookies(function (err, cookies) {
+            if (cookies === undefined) {
+              res.send('failed to get cookies after login');
+              reject('Cookie error'); // need test
+            } else {
+              console.log('Login successful');
+              resolve({ cookies, cookieJar });
+            }
+          });
+        }
+      }).catch(function (error) {
+        console.log(error);
+        reject('respond with a resource - error ' + error);
+      });
     });
-  });
 
-  return promise;
+    return promise;
   }
 
   async get(url, res, cookies = null, cookieJar = null) {

@@ -6,6 +6,8 @@ config.defaultApi = {
   "url" : process.env.API_SITE || 'site',
   "username" : process.env.API_USER || 'username',
   "password" :  process.env.API_PASSWORD || 'password',
+  "instanceName" :  process.env.INSTANCE_NAME || 'instanceName',
+  "customerName" :  process.env.CUSTOMER_NAME || 'Outlook',
   "logonEndpoint" : 'Logon.ashx',
   "activityListEndpoint": '~api/calendar/activityList?',
   "calendarWeekGridEndpoint": '~api/calendar/CalendarWeekGrid?',
