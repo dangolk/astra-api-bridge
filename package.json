@@ -24,6 +24,7 @@
     "mocha": "^6.2.0",
     "moment": "^2.24.0",
     "morgan": "^1.9.1",
+    "serverless-http": "^2.3.0",
     "swagger-jsdoc": "^3.3.0",
     "swagger-ui-express": "^4.0.7",
     "tough-cookie": "^3.0.1",

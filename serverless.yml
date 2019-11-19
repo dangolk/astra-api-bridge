@@ -1,0 +1,16 @@
+# serverless.yml
+
+service: astra-api-bridge
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-east-1'}
+
+functions:
+  app:
+    handler: app.handler
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
