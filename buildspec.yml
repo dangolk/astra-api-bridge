@@ -1,9 +1,6 @@
 version: 0.2
 
-run-as: Linux-user-name
-
 phases:
   hello:
-    run-as: Linux-user-name
     commands:
       - echo "Hello World!"
